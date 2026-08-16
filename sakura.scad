@@ -1,9 +1,11 @@
 // SAKURA — three-level 3D text logo
 //
-// Layers (inside → out):
-//   1. Pink text core          — top face
-//   2. White outline ring      — middle band on the top face
-//   3. Purple outline + base   — outer ring on top + full extruded sides
+// Layers (inside → out), bottom-aligned at z = 0:
+//   1. Pink text core          — height set by pink_height
+//   2. White outline ring      — taller than purple (white_height)
+//   3. Purple outline ring     — shortest layer (purple_height)
+//
+// Height order: purple < white. pink_height can be above or below white_height.
 //
 // Open in OpenSCAD and press F5 (preview) or F6 (render).
 // Adjust parameters below to match your printer / desired scale.
@@ -18,10 +20,10 @@ spacing     = 0.92;   // letter spacing multiplier
 white_width  = 1.4;
 purple_width = 2.8;
 
-// ── Extrusion heights (mm) — purple is tallest for the chunky 3D base ───────
-pink_height   = 3.0;
-white_height  = 4.0;
-purple_height = 6.0;
+// ── Extrusion heights (mm), all measured up from z = 0 ─────────────────────
+purple_height = 2.0;   // shortest
+white_height  = 4.0;   // taller than purple
+pink_height   = 5.0;   // can be > or < white_height
 
 // ── Corner roundness (mm) — 0 disables minkowski rounding ────────────────────
 roundness = 0.6;
@@ -81,25 +83,19 @@ module white_outline() {
         text_shape();
 }
 
-// Level 3 — purple outline.
-// Full outer silhouette extruded to form the chunky 3D base; the top-face
-// outer ring is visible between the white band and the purple edge.
+// Level 3 — purple outline ring (shortest).
 module purple_outline() {
   color(purple_color)
     linear_extrude(height = purple_height, convexity = 10)
-      offset(r = white_width + purple_width)
+      ring(inner = white_width, outer = white_width + purple_width)
         text_shape();
 }
 
-// Stack layers: purple base at the bottom, white and pink on top.
+// All layers share the same bottom at z = 0; each rises to its own height.
 module sakura_logo() {
   purple_outline();
-
-  translate([0, 0, purple_height - white_height])
-    white_outline();
-
-  translate([0, 0, purple_height - pink_height])
-    pink_core();
+  white_outline();
+  pink_core();
 }
 
 // ── Entry point ───────────────────────────────────────────────────────────────
